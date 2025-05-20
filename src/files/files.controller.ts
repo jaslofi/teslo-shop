@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UploadedFile, UseInterceptors, BadRequestException, Res } from '@nestjs/common';
+import { Controller, Get, Post, Param, UploadedFile, UseInterceptors, BadRequestException, Res } from '@nestjs/common';
 import { FilesService } from './files.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { fileFilter } from './helpers/fileFilter.helper';
@@ -14,16 +14,16 @@ export class FilesController {
   constructor(
     private readonly filesService: FilesService,
     private readonly configService: ConfigService,
-  
-  ) {}
 
-  @Get('product/:imageName') 
+  ) { }
+
+  @Get('product/:imageName')
   findProductImage(
-    @Res() res : Response,
+    @Res() res: Response,
     @Param('imageName') imageName: string
   ) {
 
-    const path = this.filesService.getStaticProductImage( imageName );
+    const path = this.filesService.getStaticProductImage(imageName);
 
     res.sendFile(path);
 
@@ -33,27 +33,28 @@ export class FilesController {
     // })
     // return path;
   }
-  
-  
-  @Post('product')
-  @UseInterceptors( FileInterceptor('file', {
-    fileFilter:fileFilter,
-    // limits:{ fileSize:1000 }
-    storage:diskStorage({
-      destination:'./static/products',
-      filename:fileNamer
-    })
-  }) )
-  uploadProductImage( 
-    @UploadedFile() file: Express.Multer.File
-  ){
 
-    if( !file ) {
+
+  @Post('product')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      fileFilter: fileFilter,
+      // limits:{ fileSize:1000 }
+      storage: diskStorage({
+        destination: './static/products',
+        filename: fileNamer
+      })
+    }))
+  uploadProductImage(
+    @UploadedFile() file: Express.Multer.File
+  ) {
+
+    if (!file) {
 
       throw new BadRequestException('Make sure that the file is an image');
     }
 
-    const secureUrl = `${ this.configService.get('HOST_API')}/files/product/${ file.filename}`
+    const secureUrl = `${this.configService.get('HOST_API')}/files/product/${file.filename}`
 
     return { secureUrl };
 
