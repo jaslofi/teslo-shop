@@ -7,6 +7,7 @@ import { DataSource, Repository } from 'typeorm';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
 import { validate as isUUID } from 'uuid';
 import { ProductImage } from './entities/product-image.entity';
+import { User } from 'src/auth/entities/user.entity';
 
 @Injectable()
 export class ProductsService {
@@ -25,7 +26,7 @@ export class ProductsService {
 
   ) { }
 
-  async create(createProductDto: CreateProductDto) {
+  async create(createProductDto: CreateProductDto, user: User) {
 
     try {
 
@@ -33,6 +34,7 @@ export class ProductsService {
 
       const product = this.productRepository.create({
         ...productDetails,
+        user,
         images: images.map(image => this.productImageRepository.create({ url: image })),
 
       })
@@ -101,7 +103,7 @@ export class ProductsService {
     }
   }
 
-  async update(id: string, updateProductDto: UpdateProductDto) {
+  async update(id: string, updateProductDto: UpdateProductDto, user: User) {
 
     const { images, ...toUpdate } = updateProductDto;
 
@@ -119,17 +121,19 @@ export class ProductsService {
         await queryRunner.manager.delete(ProductImage, { product: { id } });
 
         product.images = images.map(image => this.productImageRepository.create({ url: image }));
-      } 
+      }
       // else {
 
       //   product.images = await this.productImageRepository.findBy({product: { id } });
       // }
 
+      product.user = user;
+
       await queryRunner.manager.save(product);
       await queryRunner.commitTransaction();
       await queryRunner.release();
       // await this.productRepository.save(product);
-      return this.findOnePlain( id );
+      return this.findOnePlain(id);
       // return product;
 
     } catch (error) {
@@ -157,18 +161,19 @@ export class ProductsService {
     throw new InternalServerErrorException('Unexpected error, check server logs');
   }
 
-  async deleteAllProducts(){
+  async deleteAllProducts() {
 
     const query = this.productRepository.createQueryBuilder('product');
 
     try {
       return await query
-      .delete()
-      .where({})
-      .execute();
+        .delete()
+        .where({})
+        .execute();
 
     } catch (error) {
       this.handleDBExceptions(error);
     }
   }
+
 }
